@@ -5,7 +5,7 @@
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 <div class="notification is-danger">
-    {{ messages[0] }}. Go to <a href="{{ url_for('login') }}">login page</a>.
+    {{ messages[0] }}. Go to <a href="{{ url_for('signup') }}">signup page</a>.
 </div>
 {% endif %}
 {% endwith %}
@@ -24,12 +24,6 @@
                 <div class="control">
                     <input class="input is-large" type="password" name="password" placeholder="Your Password">
                 </div>
-            </div>
-            <div class="field">
-                <label class="checkbox">
-                    <input type="checkbox" name="remember">
-                    Remember me
-                </label>
             </div>
             <button class="button is-block is-info is-large is-fullwidth">Login</button>
         </form>

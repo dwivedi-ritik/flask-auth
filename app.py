@@ -1,25 +1,22 @@
 from flask import Flask, render_template, request, flash , redirect , url_for
-from flask_login import LoginManager , login_required , login_user , logout_user , current_user , UserMixin
+from flask_login import  login_required , login_user , logout_user , current_user 
+from werkzeug.security import generate_password_hash , check_password_hash
 
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db , login_manager , SECRET_KEY , DB_URI
+from models import User
 
-db = SQLAlchemy()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'abcking123'
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydb.db"
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
 
 db.init_app(app)
 
-# User model
-class User(UserMixin , db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # primary keys are required by SQLAlchemy
-    email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
-    name = db.Column(db.String(1000))
-
-login_manager = LoginManager()
 login_manager.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -37,11 +34,15 @@ def home():
 def login():
     if request.method == "POST":
         email = request.form.get("email") 
-        password = request.form.get("name")
+        password = request.form.get("password")
         user = User.query.filter_by(email=email).first()
-
+        
         if not user:
             flash("No email registered")
+ 
+        elif not check_password_hash(user.password, password):
+            flash("Password mismatched")
+        
         else:
             login_user(user)
             return redirect(url_for('profile'))
@@ -61,7 +62,8 @@ def signup():
             flash("Email is already registered")
         else:
             try:
-                new_user = User(email=email , password=password , name=name)
+                hashed_password = generate_password_hash(password)
+                new_user = User(email=email , password=hashed_password , name=name)
                 db.session.add(new_user)
                 db.session.commit()
                 login_user(new_user)
@@ -75,7 +77,7 @@ def signup():
 @app.route("/user")
 @login_required
 def profile():
-    return render_template("profile.html" , name=current_user.password)
+    return render_template("profile.html" , name=current_user.name)
 
 
 @app.route("/logout")
